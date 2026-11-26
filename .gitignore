@@ -1,0 +1,49 @@
+# ── Secretos y credenciales (nunca versionar) ────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa*
+id_ed25519*
+*.gpg
+*.asc
+*_token*
+*secret*
+credentials.json
+service-account*.json
+.netrc
+npmrc.local
+
+# ── Rust ─────────────────────────────────────────────────────────────────────
+target/
+*.rs.bk
+
+# ── Frontend / Node ──────────────────────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# ── Descargas y caché local ──────────────────────────────────────────────────
+downloads/
+Descargas/
+*.part
+*.ytdl
+*.tmp
+cache/
+.cache-app/
+history.json
+settings.local.json
+
+# ── Sistema y editores ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

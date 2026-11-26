@@ -1,0 +1,116 @@
+# Arquitectura de Seyro-MP4
+
+**Versión 1.0 · 2026-11-26**
+
+## Principios heredados de Seyropea
+
+Seyropea demostró que una herramienta Seyroo puede ser nativa, ligera, determinista y honesta sin frameworks ni servicios remotos. Seyro-MP4 conserva esa filosofía y la traslada al dominio del vídeo:
+
+1. **Local-first:** la consulta y la descarga ocurren en el equipo del usuario. No hay backend propio.
+2. **Sin bloat:** Rust + JavaScript sin bundler en runtime, sin CDN, sin telemetría, sin cuentas.
+3. **Datos reales:** la interfaz solo muestra lo que el origen devuelve. Si no hay 4K, no existe el botón de 4K.
+4. **Frontera endurecida:** todo lo que entra desde la UI se valida en el núcleo antes de tocar red, disco o procesos.
+
+## Decisión central y sus alternativas
+
+| Opción | Por qué se descarta o se elige |
+| --- | --- |
+| Web pura que descarga desde el navegador | CORS y ausencia de extractores reales: solo podría prometer formatos que no se pueden resolver. Descartada. |
+| Servidor propio de descarga | Coste, superficie SSRF, responsabilidad sobre contenido de terceros y gestión de secretos. Descartado para un proyecto gratuito. |
+| **Tauri v2 + núcleo Rust local** | Mismo stack que Seyropea, cero coste de alojamiento para la app, diálogos nativos y procesos locales con argumentos seguros. **Elegida.** |
+| Empaquetar `yt-dlp`/`ffmpeg` en el instalador | Aumenta el tamaño, envejece mal y complica licencias. Se detectan en el `PATH` y se documentan como opcionales. |
+| Base de datos | Innecesaria en el MVP. El historial es una lista saneada en JSON/local; sin IDs de cliente con autoridad. |
+
+La web de GitHub Pages es **documentación estática**: landing, matriz de plataformas y páginas legales. No simula ser un descargador web.
+
+## Componentes
+
+```
+core/                     Biblioteca Rust pura, sin E/S de red todavía
+  security.rs             URLs, dominios, rutas, nombres de archivo, redacción de errores
+  model.rs                Pistas reales, etiquetas de calidad, filtro anti-escalado
+  adapters.rs             Registro de plataformas y capacidades (incluye DRM/estado)
+  errors.rs               Errores con código, mensaje humano y detalle redactado
+
+src-tauri/ (fase UI)      Capa de escritorio
+  commands.rs             IPC: inspeccionar, descargar, cancelar, reintentar, limpiar
+  inspector.rs            Invoca yt-dlp con argv, parsea metadatos, construye pistas reales
+  downloader.rs            Cola, estados, progreso, cancelación y mux
+  tools.rs                Descubrimiento de yt-dlp/ffmpeg en PATH, sin shell
+
+src/frontend/ (fase UI)   JavaScript + CSS locales
+  components.js           Toast, Modal, Tooltip, Badge, Skeleton (matriz DIVAE)
+  format-selector.js      Selector de pistas reales
+  queue-item.js           Estado concreto de cada tarea
+  inspector-panel.js      Metadatos y skeleton loaders
+  security.js             Sanitización de texto/URL antes de renderizar
+  styles.css              Tokens Seyroo (mismo acento naranja que Seyropea)
+
+docs/                     Landing estática, arquitectura, formatos y documentos legales
+assets/brand/             SVG maestro, favicon y script de regeneración
+.github/workflows/ci.yml  Formato, clippy, pruebas e higiene de secretos
+```
+
+## Flujo de datos
+
+```
+URL del usuario
+   │  sanitizar + validar dominio (core::security)
+   ▼
+Adaptador resuelto (core::adapters)
+   │ Capabilities: vídeo / audio / solo metadatos / no soportado
+   ▼
+Inspector (yt-dlp --dump-single-json, argv)
+   │  JSON → Vec<RealTrack> → filtro por altura real del origen
+   ▼
+InspectorPanel (Skeleton mientras llega; después tabla de pistas reales)
+   │  FormatSelector: V+A / V / A, bitrate, FPS, tamaño estimado
+   ▼
+Cola de descargas (estados: analizando → resolviendo → descargando → procesando → listo/error)
+   │  cancelar = kill del proceso; reintentar = nuevo JobId generado en el núcleo
+   ▼
+ffmpeg opcional (mux V+A o extracción A), siempre con argv
+   ▼
+Archivo con nombre seguro, dentro del directorio elegido
+```
+
+## Verdad de calidades
+
+- La altura del origen se toma del **máximo real** entre las pistas de vídeo devueltas. Nunca de un valor configurable.
+- Una pista con `height > max_source_height` se descarta y se registra como inconsistencia; nunca se muestra.
+- La etiqueta usa la altura exacta (`1080p`, `720p`, `480p`). No se redondea hacia arriba ni se inventa `2160p`.
+- Para audio sin vídeo, la etiqueta es el bitrate real (`320kbps`) o `bitrate desconocido` si el origen no lo informa.
+- Un FLAC generado desde una fuente con pérdida se etiqueta como **transcodificado**, no como lossless original.
+
+Detalles operativos en [`FORMATOS.md`](FORMATOS.md).
+
+## Seguridad aplicada
+
+| Riesgo | Control |
+| --- | --- |
+| Rutas administrativas abiertas | No hay backend ni rutas de administración; Pages sirve archivos estáticos. |
+| IDOR | Los `JobId` los genera el núcleo; la UI no elige IDs. Cada operación verifica que el ID pertenezca a la cola en memoria. |
+| Credenciales expuestas | Sin claves en código; se rechazan URL con `user:pass@`; no se solicitan tokens de plataformas. |
+| Secretos en Git | `.gitignore` estricto desde el primer commit, `SECURITY.md`, CI con escaneo de patrones y revisión antes de cada push. |
+| Inyección de prompts | No hay LLM en el MVP. Si se añade, los metadatos serán datos, nunca instrucciones. |
+| XSS | `textContent`/`escapeHtml` para todo texto dinámico; sin `innerHTML` con datos externos; CSP estricto. |
+| SQLi / inyección de comandos | Sin base de datos; procesos con `Command::new(...).args([...])`, nunca `sh -c`. |
+| SSRF / path traversal | Solo HTTPS y dominios permitidos; se rechazan IPs, localhost y `..`; la ruta final se confina al directorio elegido. |
+| Errores verbose | `AppError` expone código + mensaje humano; el detalle se redacta antes de copiarse. |
+
+## Fases de entrega
+
+1. **Base (actual):** repositorio, licencia, seguridad, adaptadores, modelo, documentación legal y CI.
+2. **Identidad y componentes:** tokens Seyroo, favicon, `Toast`, `Modal`, `Tooltip`, `Badge`, `Skeleton`, estados de foco y accesibilidad.
+3. **Motor:** inspector y descargador con `yt-dlp`/`ffmpeg`, cola real, diagnóstico legible.
+4. **Web y docs:** landing estática en `docs/`, enlaces legales y capturas reales cuando existan.
+5. **Auditoría final:** secretos, XSS/SSRF/traversal, consola limpia, accesibilidad y coherencia con Seyropea.
+
+## Verificación
+
+```bash
+cargo fmt --all -- --check
+cargo clippy -p seyro-mp4-core --all-targets -- -D warnings
+cargo test  -p seyro-mp4-core
+bash scripts/check-secrets.sh
+```

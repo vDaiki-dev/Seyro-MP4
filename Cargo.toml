@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = ["core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+authors = ["Seyroo (vDaiki-dev)"]
+repository = "https://github.com/vDaiki-dev/Seyro-MP4"

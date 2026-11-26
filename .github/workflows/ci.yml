@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: Núcleo · fmt, clippy y pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: '1.100.0'
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      - name: Formato
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy -p seyro-mp4-core --all-targets -- -D warnings
+      - name: Pruebas deterministas
+        run: cargo test -p seyro-mp4-core
+
+  hygiene:
+    name: Higiene · secretos y documentación legal
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Buscar secretos en archivos versionados
+        run: bash scripts/check-secrets.sh
+      - name: Verificar documentos obligatorios
+        run: |
+          for file in README.md LICENSE SECURITY.md CONTRIBUTING.md \
+            docs/ARCHITECTURE.md docs/FORMATOS.md docs/PRIVACIDAD.md \
+            docs/TERMINOS.md docs/COOKIES.md docs/DESCARGO.md docs/.nojekyll; do
+            test -f "$file" || { echo "Falta $file" >&2; exit 1; }
+          done
+          echo 'OK: documentación legal presente'
+      - name: Sin dependencias remotas en la web estática
+        run: |
+          if grep -RInE '(cdn\.|unpkg\.com|jsdelivr\.net|fonts\.googleapis\.com)' docs --include='*.html'; then
+            echo 'ERROR: referencia remota en docs/' >&2
+            exit 1
+          fi
+          echo 'OK: documentación autocontenida'
