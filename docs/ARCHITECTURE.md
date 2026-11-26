@@ -19,24 +19,32 @@ Seyropea demostró que una herramienta Seyroo puede ser nativa, ligera, determin
 | Servidor propio de descarga | Coste, superficie SSRF, responsabilidad sobre contenido de terceros y gestión de secretos. Descartado para un proyecto gratuito. |
 | **Tauri v2 + núcleo Rust local** | Mismo stack que Seyropea, cero coste de alojamiento para la app, diálogos nativos y procesos locales con argumentos seguros. **Elegida.** |
 | Empaquetar `yt-dlp`/`ffmpeg` en el instalador | Aumenta el tamaño, envejece mal y complica licencias. Se detectan en el `PATH` y se documentan como opcionales. |
-| Base de datos | Innecesaria en el MVP. El historial es una lista saneada en JSON/local; sin IDs de cliente con autoridad. |
+| Base de datos | Innecesaria en el MVP. El historial vive en memoria mientras la app está abierta; solo se persisten las preferencias. Sin IDs de cliente con autoridad. |
 
 La web de GitHub Pages es **documentación estática**: landing, matriz de plataformas y páginas legales. No simula ser un descargador web.
 
 ## Componentes
 
 ```
-core/                     Biblioteca Rust pura, sin E/S de red todavía
+core/                     Biblioteca Rust pura, sin red ni procesos
   security.rs             URLs, dominios, rutas, nombres de archivo, redacción de errores
   model.rs                Pistas reales, etiquetas de calidad, filtro anti-escalado
   adapters.rs             Registro de plataformas y capacidades (incluye DRM/estado)
   errors.rs               Errores con código, mensaje humano y detalle redactado
+  jobs.rs                 IDs de trabajo generados en el núcleo (anti-IDOR)
 
-src-tauri/ (fase UI)      Capa de escritorio
-  commands.rs             IPC: inspeccionar, descargar, cancelar, reintentar, limpiar
-  inspector.rs            Invoca yt-dlp con argv, parsea metadatos, construye pistas reales
-  downloader.rs            Cola, estados, progreso, cancelación y mux
+engine/                   Única capa con procesos externos
   tools.rs                Descubrimiento de yt-dlp/ffmpeg en PATH, sin shell
+  inspect.rs              yt-dlp --dump-single-json → pistas reales + diagnose
+  download.rs             argv separado, plantilla confinada, eventos y rutas finales
+  queue.rs                Cola en memoria, estados, progreso, cancelación y reintento
+
+src-tauri/                Capa de escritorio Tauri v2
+  commands.rs             IPC: inspeccionar, descargar, cancelar, reintentar, limpiar
+  lib.rs / main.rs        Estado Arc<Engine> y arranque
+  tauri.conf.json         CSP estricta, sin permisos de red ni sistema de archivos
+  capabilities/           Solo `core:default` para la ventana `main`
+  icons/                  PNG/ICO/ICNS derivados de src/frontend/favicon.svg
 
 src/frontend/             JavaScript + CSS locales, sin bundler ni dependencias
   boot.js                 Preferencias aplicadas en <head>: sin parpadeo
@@ -45,19 +53,19 @@ src/frontend/             JavaScript + CSS locales, sin bundler ni dependencias
   theme.js                Modos, acentos, contraste WCAG y tipografías
   components.js           Toast, Modal, Tooltip, Badge, Skeleton (matriz DIVAE)
   appearance.js           Panel de apariencia e idioma
-  main.js                 Cableado de la app local
+  ipc.js                  Puente Tauri: sin stack traces ni evaluación de cadenas
+  inspector-panel.js      Metadatos y aviso de pistas descartadas
+  format-selector.js      Selección de pistas reales y contenedor
+  queue-item.js           Estado concreto, progreso y acciones de cada tarea
+  main.js                 Cableado de la app al motor
   styles.css              Tokens brutalistas Seyroo; sin gradientes ni sombras difusas
   favicon.svg             Marca propia Seyro-MP4
   test/                   Pruebas deterministas con node:test
-  format-selector.js      Selector de pistas reales (con el motor, Paso 5)
-  queue-item.js           Estado concreto de cada tarea (Paso 5)
-  inspector-panel.js      Metadatos y skeletons reales (Paso 5)
 
 docs/                     Landing estática, arquitectura, diseño y documentos legales
 docs/assets/              Copia sincronizada de boot/i18n/security/theme/styles/favicon
-assets/brand/             SVG maestro y favicon (fase de branding)
-scripts/                  check-secrets, check-frontend, check-i18n, sync-web-assets
-.github/workflows/ci.yml  Núcleo, frontend, secretos y documentación obligatoria
+scripts/                  check-secrets, check-frontend, check-i18n, build-icons, sync-web-assets
+.github/workflows/ci.yml  Núcleo, motor, escritorio, frontend, secretos y documentación
 ```
 
 ## Configuración local, idiomas y tema
@@ -86,12 +94,14 @@ Inspector (yt-dlp --dump-single-json, argv)
 InspectorPanel (Skeleton mientras llega; después tabla de pistas reales)
    │  FormatSelector: V+A / V / A, bitrate, FPS, tamaño estimado
    ▼
-Cola de descargas (estados: analizando → resolviendo → descargando → procesando → listo/error)
-   │  cancelar = kill del proceso; reintentar = nuevo JobId generado en el núcleo
+Cola en memoria (estados: descargando → procesando → listo / error / cancelado)
+   │  progreso real leído de stderr; cancelar = kill + limpieza de parciales
+   │  reintentar = nuevo ID generado en el núcleo, nunca reutilizado
    ▼
-ffmpeg opcional (mux V+A o extracción A), siempre con argv
+ffmpeg solo si hay mux V+A o recodificación de audio; siempre con argv
    ▼
-Archivo con nombre seguro, dentro del directorio elegido
+Archivo con nombre seguro y sufijo único, dentro de ~/Seyro-MP4
+   │  ruta final impresa por yt-dlp, aceptada solo si sigue confinada
 ```
 
 ## Verdad de calidades
@@ -109,7 +119,7 @@ Detalles operativos en [`FORMATOS.md`](FORMATOS.md).
 | Riesgo | Control |
 | --- | --- |
 | Rutas administrativas abiertas | No hay backend ni rutas de administración; Pages sirve archivos estáticos. |
-| IDOR | Los `JobId` los genera el núcleo; la UI no elige IDs. Cada operación verifica que el ID pertenezca a la cola en memoria. |
+| IDOR | Los IDs de trabajo los genera el núcleo; la UI no elige IDs. Cada operación verifica que el ID pertenezca a la cola en memoria. |
 | Credenciales expuestas | Sin claves en código; se rechazan URL con `user:pass@`; no se solicitan tokens de plataformas. |
 | Secretos en Git | `.gitignore` estricto desde el primer commit, `SECURITY.md`, CI con escaneo de patrones y revisión antes de cada push. |
 | Inyección de prompts | No hay LLM en el MVP. Si se añade, los metadatos serán datos, nunca instrucciones. |
@@ -120,17 +130,19 @@ Detalles operativos en [`FORMATOS.md`](FORMATOS.md).
 
 ## Fases de entrega
 
-1. **Base (actual):** repositorio, licencia, seguridad, adaptadores, modelo, documentación legal y CI.
+1. **Base:** repositorio, licencia, seguridad, adaptadores, modelo, documentación legal y CI.
 2. **Identidad y componentes:** tokens Seyroo, favicon, `Toast`, `Modal`, `Tooltip`, `Badge`, `Skeleton`, estados de foco y accesibilidad.
-3. **Motor:** inspector y descargador con `yt-dlp`/`ffmpeg`, cola real, diagnóstico legible.
-4. **Web y docs:** landing estática en `docs/`, enlaces legales y capturas reales cuando existan.
+3. **Motor (completado):** inspector y descargador con `yt-dlp`/`ffmpeg`, cola real, diagnóstico legible y app Tauri conectada.
+4. **Web y docs:** landing estática en `docs/`, enlaces legales y documentación alineada con el motor (estado actual).
 5. **Auditoría final:** secretos, XSS/SSRF/traversal, consola limpia, accesibilidad y coherencia con Seyropea.
 
 ## Verificación
 
 ```bash
 cargo fmt --all -- --check
-cargo clippy -p seyro-mp4-core --all-targets -- -D warnings
-cargo test  -p seyro-mp4-core
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test  --workspace
+cargo check -p seyro-mp4-app
+bash scripts/check-frontend.sh
 bash scripts/check-secrets.sh
 ```

@@ -1,0 +1,21 @@
+[package]
+name = "seyro-mp4-app"
+description = "Seyro-MP4: descarga honesta y multiformato, local y sin telemetría"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "seyro_mp4_app"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = "2.7.6"
+
+[dependencies]
+tauri = { version = "2.12.7", features = [] }
+seyro-mp4-core = { path = "../core" }
+seyro-mp4-engine = { path = "../engine" }
+serde = { version = "1", features = ["derive"] }

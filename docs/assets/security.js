@@ -59,10 +59,11 @@ export function validatePublicHttpsUrl(value) {
   const isLocal = host === 'localhost'
     || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal');
   if (!host || isIp || isLocal) return bad();
-  const known = KNOWN_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
-  if (!known) return bad();
   if (raw.includes('..') || raw.includes('\\')) return bad();
-  return { ok: true, code: '', host, direct: DIRECT_EXTENSIONS.test(parsed.pathname) };
+  const direct = DIRECT_EXTENSIONS.test(parsed.pathname);
+  const known = KNOWN_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+  if (!known && !direct) return bad();
+  return { ok: true, code: '', host, direct };
 }
 
 /** Enlaces externos permitidos: solo el repositorio Seyroo. */

@@ -48,6 +48,7 @@
             <button class="button button--primary" type="submit" data-i18n="action.analyze">Analizar enlace</button>
           </div>
         </form>
+        <p id="tools-status" class="tools-line" hidden></p>
       </section>
 
       <section class="block" aria-labelledby="meta-title">
@@ -58,16 +59,23 @@
         <p id="metadata-empty" class="empty" data-i18n="empty.inspector">Pega un enlace público y pulsa Analizar.</p>
         <div id="metadata-slot" hidden></div>
         <dl id="metadata-fields" class="data-list" hidden></dl>
+        <div id="inspector-note" hidden></div>
       </section>
 
       <section class="block" aria-labelledby="tracks-title">
         <div class="block__head"><h2 id="tracks-title" data-i18n="label.tracks">Pistas reales</h2></div>
+        <div id="selection-slot"></div>
+
         <p id="tracks-empty" class="empty" data-i18n="empty.tracks">Todavía no hay pistas.</p>
         <div id="tracks-list"></div>
       </section>
 
       <section class="block block--queue" aria-labelledby="queue-title">
-        <div class="block__head"><h2 id="queue-title" data-i18n="nav.queue">Cola</h2></div>
+        <div class="block__head">
+          <h2 id="queue-title" data-i18n="nav.queue">Cola</h2>
+          <button id="clear-history" class="button button--small" type="button" data-i18n="action.clearHistory">Limpiar historial</button>
+        </div>
+
         <p id="queue-empty" class="empty" data-i18n="empty.queue">La cola está vacía.</p>
         <ul id="queue-list" class="queue-list"></ul>
       </section>

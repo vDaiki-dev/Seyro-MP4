@@ -8,8 +8,8 @@ Seyro-MP4 es una herramienta técnica local. No tenemos cuentas, servidores prop
 
 - La URL que introduces, para consultar metadatos públicos del medio (título, duración, formatos disponibles).
 - Los metadatos públicos que devuelve la plataforma.
-- Tus preferencias locales (tema, idioma).
-- El historial local de trabajos, guardado solo en tu dispositivo.
+- Tus preferencias locales (modo, acento, tipografía e idioma), guardadas en una única clave de `localStorage`.
+- El historial de trabajos de la sesión, solo en memoria: se pierde al cerrar la app. Los archivos descargados quedan en `~/Seyro-MP4` hasta que los borras tú.
 
 Seyro-MP4 solo realiza la consulta necesaria a la plataforma correspondiente para leer esos datos públicos. Si instalas `yt-dlp` o `ffmpeg` por tu cuenta, los ejecuta localmente como herramientas independientes; Seyro-MP4 no los distribuye ni recoge información de ellos.
 
@@ -22,11 +22,11 @@ Seyro-MP4 solo realiza la consulta necesaria a la plataforma correspondiente par
 
 No hay base de datos nuestra, por lo que no hay transferencia a terceros. Al no recogerse datos personales, no se solicita consentimiento adicional: el tratamiento es el mínimo necesario para ejecutar la consulta que pides, en tu equipo.
 
-## Logs y caché local
+## Archivos temporales y diagnóstico
 
-La app puede crear archivos temporales y una caché local para evitar repetir consultas. Puedes borrar el historial desde la propia interfaz («Borrar historial»). En la web, elimina los datos del sitio desde la configuración del navegador. En la app de escritorio, desinstalarla elimina su directorio de datos; para conservarla, usa la opción de limpieza interna.
+Seyro-MP4 no mantiene una caché propia de metadatos: cada inspección vuelve a preguntar al origen. `yt-dlp` puede crear archivos parciales en `~/Seyro-MP4`; al cancelar se limpian solo los parciales de esa descarga. Puedes vaciar la cola de la sesión desde «Limpiar historial». En la web, elimina los datos del sitio desde la configuración del navegador.
 
-Los registros de error que se muestran en el modo diagnóstico se redactan antes de copiarse: no incluyen rutas de tu sistema ni tokens.
+El botón «Copiar diagnóstico» redacta el detalle antes de copiarlo: no incluye rutas de tu sistema, tokens ni la salida cruda del proceso. Tampoco hay informes de error automáticos.
 
 ## Contacto y cambios
 

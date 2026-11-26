@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-window",
+  "description": "La ventana principal solo necesita el IPC base de Tauri; no tiene permisos de sistema de archivos ni de red.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

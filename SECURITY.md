@@ -8,8 +8,9 @@ Incluye: versión/commit, sistema operativo, pasos mínimos para reproducirlo y 
 
 ## Alcance
 
-- Núcleo Rust (`core/`): validación de URL, rutas, nombres de archivo y redacción de errores.
-- Capa de escritorio y frontend cuando estén publicadas.
+- Núcleo Rust (`core/`): validación de URL, rutas, nombres de archivo, IDs de trabajo y redacción de errores.
+- Motor (`engine/`): allowlist de formatos contra la última inspección, argv separado, confinamiento de rutas y cancelación.
+- Capa Tauri y frontend: IPC mínimo, CSP, sanitización sin `innerHTML` y persistencia local.
 - Web estática de GitHub Pages.
 
 ## Fuera de alcance
@@ -20,4 +21,4 @@ Incluye: versión/commit, sistema operativo, pasos mínimos para reproducirlo y 
 
 ## Compromisos del proyecto
 
-Sin secretos en el repositorio, sin rutas administrativas, sin telemetría, sin ejecución de comandos por shell, sin `innerHTML` con datos externos y sin stack traces en la interfaz. La CI verifica formato, análisis estático, pruebas del núcleo y ausencia de patrones de credenciales en archivos versionados.
+Sin secretos en el repositorio, sin rutas administrativas, sin telemetría, sin ejecución de comandos por shell, sin `innerHTML` con datos externos y sin stack traces en la interfaz. La CI verifica formato, análisis estático, pruebas del núcleo y del motor, compilación de la capa Tauri, i18n, assets sincronizados e higiene de secretos en archivos versionados.

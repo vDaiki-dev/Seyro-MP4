@@ -1,0 +1,17 @@
+[package]
+name = "seyro-mp4-engine"
+description = "Motor local de Seyro-MP4: inspección y descarga con yt-dlp/ffmpeg mediante argv"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "seyro_mp4_engine"
+path = "src/lib.rs"
+
+[dependencies]
+seyro-mp4-core = { path = "../core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

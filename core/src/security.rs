@@ -30,6 +30,7 @@ pub enum SecurityError {
     InvalidFilename,
     ReservedFilename,
     UnsupportedExtension,
+    InvalidFormatSelector,
 }
 
 impl fmt::Display for SecurityError {
@@ -47,6 +48,7 @@ impl fmt::Display for SecurityError {
             Self::InvalidFilename => "El nombre de archivo no es válido",
             Self::ReservedFilename => "El nombre de archivo está reservado por el sistema",
             Self::UnsupportedExtension => "La extensión de salida no está soportada",
+            Self::InvalidFormatSelector => "El selector de formato no es válido",
         };
         f.write_str(text)
     }
@@ -152,9 +154,6 @@ pub fn validate_media_url(
     {
         return Err(SecurityError::IpLiteral);
     }
-    if !host_matches(&host, policy.allowed_hosts) {
-        return Err(SecurityError::HostNotAllowed);
-    }
     let tail = &rest[authority_end..];
     let lowered = tail.to_ascii_lowercase();
     if lowered.contains("..")
@@ -164,10 +163,17 @@ pub fn validate_media_url(
     {
         return Err(SecurityError::Traversal);
     }
+    let is_direct_media = direct_media_extension(tail);
+    // Un archivo multimedia directo puede venir de cualquier host público;
+    // las plataformas conocidas siguen limitadas a su lista blanca. IPs,
+    // localhost y credenciales ya se han rechazado arriba.
+    if !is_direct_media && !host_matches(&host, policy.allowed_hosts) {
+        return Err(SecurityError::HostNotAllowed);
+    }
     Ok(ValidatedUrl {
         raw: raw.to_owned(),
         host,
-        is_direct_media: direct_media_extension(tail),
+        is_direct_media,
     })
 }
 
@@ -309,6 +315,23 @@ pub fn redact_detail(raw: &str, max: usize) -> String {
     redacted.chars().take(max).collect()
 }
 
+/// Compone un selector de yt-dlp a partir de IDs individuales verificados.
+/// Nunca acepta caracteres de shell ni más de dos pistas (vídeo + audio).
+pub fn format_selector(ids: &[&str]) -> Result<String, SecurityError> {
+    if ids.is_empty() || ids.len() > 2 {
+        return Err(SecurityError::InvalidFormatSelector);
+    }
+    let mut parts = Vec::with_capacity(ids.len());
+    for id in ids {
+        let clean = sanitize_id(id, "");
+        if clean.is_empty() || clean.len() > 32 || clean != *id {
+            return Err(SecurityError::InvalidFormatSelector);
+        }
+        parts.push(clean);
+    }
+    Ok(parts.join("+"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -334,6 +357,16 @@ mod tests {
             .expect("URL válida");
         assert_eq!(url.host, "www.youtube.com");
         assert!(!url.is_direct_media);
+    }
+
+    #[test]
+    fn acepta_archivo_directo_publico_en_host_no_registrado() {
+        let url = validate_media_url("https://cdn.ejemplo.org/cancion.mp3", &policy())
+            .expect("archivo directo público");
+        assert!(url.is_direct_media);
+        assert_eq!(url.host, "cdn.ejemplo.org");
+        assert!(validate_media_url("https://cdn.ejemplo.org/pagina", &policy()).is_err());
+        assert!(validate_media_url("https://127.0.0.1/cancion.mp3", &policy()).is_err());
     }
 
     #[test]
@@ -426,6 +459,16 @@ mod tests {
         assert!(!detail.contains("https://u:p@x/y"));
         assert!(detail.contains("<redactado>"));
         assert!(redact_detail("a".repeat(900).as_str(), 20).len() <= 20);
+    }
+
+    #[test]
+    fn el_selector_de_formatos_esta_restringido() {
+        assert_eq!(format_selector(&["137", "140"]).unwrap(), "137+140");
+        assert_eq!(format_selector(&["bestaudio"]).unwrap(), "bestaudio");
+        assert!(format_selector(&[]).is_err());
+        assert!(format_selector(&["a", "b", "c"]).is_err());
+        assert!(format_selector(&["../x"]).is_err());
+        assert!(format_selector(&["a;b"]).is_err());
     }
 
     #[test]

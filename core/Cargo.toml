@@ -12,3 +12,4 @@ name = "seyro_mp4_core"
 path = "src/lib.rs"
 
 [dependencies]
+serde = { version = "1", features = ["derive"] }

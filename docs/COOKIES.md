@@ -8,19 +8,22 @@ Seyro-MP4 no usa cookies propias. No hay cookies de análisis, de publicidad ni 
 
 ## Almacenamiento local
 
-Sí usamos almacenamiento local en tu navegador (`localStorage`) para tres cosas:
+Sí usamos almacenamiento local (`localStorage`) para una sola clave, `seyro-mp4.settings`, que guarda:
 
-- El tema visual elegido.
+- El modo visual (papel, terminal o sistema).
+- El acento (preset o color personalizado validado).
+- La tipografía elegida.
 - El idioma de la interfaz.
-- El historial local de trabajos (URL consultadas y resultados de la sesión).
 
-Ese almacenamiento no contiene credenciales, contraseñas ni contenido privado. No se sincroniza ni se envía a ningún servidor nuestro.
+**El historial de trabajos no se guarda en `localStorage`.** Vive en memoria mientras la app está abierta y desaparece al cerrarla; «Limpiar historial» solo descarta los trabajos terminados de esa sesión. Los archivos descargados quedan en `~/Seyro-MP4` hasta que los borras tú.
+
+Ese almacenamiento no contiene credenciales, contraseñas, URLs consultadas ni contenido privado. No se sincroniza ni se envía a ningún servidor nuestro.
 
 ## Cómo borrarlo
 
-En el navegador: configuración del sitio → datos almacenados → eliminar almacenamiento local y caché. También puedes borrar todos los datos del sitio desde la configuración general del navegador. En la app de escritorio Tauri, usa «Borrar historial» en la interfaz o elimina el directorio de datos de la aplicación al desinstalarla.
+En el navegador: configuración del sitio → datos almacenados → eliminar almacenamiento local y caché. También puedes borrar todos los datos del sitio desde la configuración general del navegador. En la app de escritorio, usa «Limpiar historial» para vaciar la cola de la sesión y elimina `~/Seyro-MP4` si quieres borrar también los archivos descargados.
 
-Borrar estos datos solo restablece tema, idioma e historial. La herramienta sigue funcionando igual.
+Borrar estos datos solo restablece tema, idioma, tipografía y cola en memoria. La herramienta sigue funcionando igual.
 
 No hay consecuencias ocultas ni perfiles de usuario: nada de lo anterior se usa para mostrarte anuncios ni para medir tu actividad.
 

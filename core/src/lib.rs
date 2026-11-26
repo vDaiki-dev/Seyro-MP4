@@ -9,6 +9,7 @@
 
 pub mod adapters;
 pub mod errors;
+pub mod jobs;
 pub mod model;
 pub mod security;
 

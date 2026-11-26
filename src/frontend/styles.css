@@ -259,6 +259,72 @@ input[type="url"]::placeholder { color: var(--muted); }
 .format-option__meta { font: 11px/1.4 var(--font-mono); color: var(--muted); }
 .format-option[aria-pressed="true"] .format-option__meta { color: var(--on-accent); }
 
+/* ── Inspector, selección y cola reales ───────────────────────────────────── */
+
+.tools-line, .inspector-note, .format-empty, .selection__note {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border: var(--border-width) solid var(--border);
+  background: var(--alt);
+  color: var(--muted);
+  font: 11px/1.5 var(--font-mono);
+}
+.tools-line[hidden], .inspector-note[hidden] { display: none; }
+
+.format-group {
+  min-width: 0;
+  margin: 12px 0 0;
+  padding: 10px;
+  border: var(--border-width) solid var(--border);
+}
+.format-group legend {
+  padding: 0 6px;
+  font: 700 10px/1 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.format-option > span { display: grid; gap: 5px; }
+
+.selection__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+  margin-top: 12px;
+}
+.selection__footer label { margin: 0; }
+.selection__footer select { font-size: 11px; }
+.selection__note { grid-column: 1 / -1; margin: 0; }
+.selection__download { justify-self: end; }
+
+.queue-item__body { min-width: 0; }
+.queue-item__name, .queue-item__path, .queue-item__message { margin: 0; }
+.queue-item__path {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.queue-item__message {
+  margin-top: 4px;
+  color: var(--ink);
+  font: 700 10px/1.4 var(--font-mono);
+}
+.progress {
+  height: 10px;
+  margin-top: 6px;
+  border: var(--border-width) solid var(--border);
+  background: var(--surface);
+}
+.progress__bar {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.15s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress__bar { transition: none; }
+}
+
 /* ── Toast / Modal / Tooltip ──────────────────────────────────────────────── */
 
 #toast-root {

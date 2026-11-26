@@ -13,8 +13,10 @@ Gracias por interesarte en Seyro-MP4. El proyecto es pequeño a propósito: se a
 ```bash
 git checkout -b feat/nombre-corto
 cargo fmt --all
-cargo clippy -p seyro-mp4-core --all-targets -- -D warnings
-cargo test  -p seyro-mp4-core
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test  --workspace
+bash scripts/check-frontend.sh
+bash scripts/check-secrets.sh
 git commit -m "feat(amplio): descripción concreta"
 git push -u origin feat/nombre-corto
 ```

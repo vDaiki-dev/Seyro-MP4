@@ -3,12 +3,14 @@
 //! La interfaz consume este modelo, nunca el JSON crudo del extractor. Eso
 //! permite garantizar que ninguna etiqueta supera la resolución verificada.
 
+use serde::Serialize;
+
 use crate::security::{
     safe_thumbnail, sanitize_id, sanitize_label, ALLOWED_EXTENSIONS, MAX_THUMBNAIL_LENGTH,
 };
 
 /// Tipo de pista tal como lo expone el origen.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum TrackKind {
     VideoAudio,
     VideoOnly,
@@ -26,9 +28,11 @@ impl TrackKind {
 }
 
 /// Una pista que realmente existe en el medio inspeccionado.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RealTrack {
     pub id: String,
+    /// ID exacto del origen, ya restringido a [A-Za-z0-9_-].
+    pub source_format_id: String,
     pub kind: TrackKind,
     pub extension: String,
     pub width: Option<u32>,
@@ -47,6 +51,8 @@ pub struct RealTrack {
     pub requires_mux: bool,
     /// Un FLAC desde una fuente con pérdida no es un máster lossless.
     pub transcoded: bool,
+    /// Etiqueta calculada por el núcleo; viaja a la UI ya verificada.
+    pub quality_label: String,
 }
 
 impl RealTrack {
@@ -60,8 +66,9 @@ impl RealTrack {
         } else {
             "mp4".to_owned()
         };
-        Self {
+        let mut track = Self {
             id: sanitize_id(id, "pista"),
+            source_format_id: sanitize_id(id, ""),
             kind,
             extension,
             width: None,
@@ -77,7 +84,10 @@ impl RealTrack {
             estimated_size_bytes: None,
             requires_mux: false,
             transcoded: false,
-        }
+            quality_label: String::new(),
+        };
+        track.quality_label = track.quality_label();
+        track
     }
 
     /// Etiqueta corta y verdadera: altura real o bitrate real.
@@ -99,7 +109,7 @@ impl RealTrack {
 }
 
 /// Resultado de una inspección ya filtrada por la política de verdad.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct MediaInspection {
     pub platform: String,
     pub title: String,
@@ -150,6 +160,7 @@ impl MediaInspection {
                 track.width = None;
                 track.resolution_unverified = true;
             }
+            track.quality_label = track.quality_label();
             tracks.push(track);
         }
         Self {

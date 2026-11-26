@@ -4,9 +4,11 @@
 
 use std::fmt;
 
+use serde::Serialize;
+
 use crate::security::redact_detail;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AppError {
     pub code: &'static str,
     pub message: String,

@@ -37,6 +37,10 @@ test('validatePublicHttpsUrl acepta dominios conocidos y detecta archivo directo
 
   const music = validatePublicHttpsUrl('https://music.youtube.com/watch?v=x');
   assert.equal(music.host, 'music.youtube.com');
+
+  const media = validatePublicHttpsUrl('https://media.ejemplo.org/cancion.mp3');
+  assert.equal(media.ok, true);
+  assert.equal(media.direct, true);
 });
 
 test('validatePublicHttpsUrl rechaza esquema, credenciales, IP, hosts locales y traversal', () => {

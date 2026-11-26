@@ -17,8 +17,9 @@ Seyro-MP4 es la segunda herramienta de la familia **Seyroo**, continuación de [
 | Núcleo de seguridad (URLs, rutas, nombres de archivo, errores) | ✅ Implementado y con pruebas |
 | Registro de plataformas y matriz de capacidades reales | ✅ Implementado y con pruebas |
 | Modelo de pistas reales y política de calidades honestas | ✅ Implementado y con pruebas |
-| Motor de inspección/descarga (`yt-dlp` + `ffmpeg` locales) | 🚧 En construcción (siguiente paso) |
-| Interfaz local y componentes (`Toast`, `Modal`, `Tooltip`, `Badge`, `Skeleton`) | ✅ Implementados y con pruebas de lógica |
+| Motor de inspección/descarga (`yt-dlp` + `ffmpeg` locales) | ✅ Implementado con 14 pruebas deterministas |
+| Capa Tauri v2, IPC mínimo y cola con cancelación/reintento | ✅ Implementada y comprobada con `cargo check` |
+| Interfaz local y componentes (`Toast`, `Modal`, `Tooltip`, `Badge`, `Skeleton`, `FormatSelector`, `QueueItem`) | ✅ Implementados y conectados al motor |
 | Brutalismo limpio, 3 modos, 5 acentos + personalizado, 3 tipografías | ✅ Implementado con contraste WCAG validado |
 | Español e inglés con diccionarios centralizados y respaldo | ✅ Implementado y verificado en CI |
 | Web estática y páginas legales | ✅ Landing publicada; solo documentación, sin descargador simulado |
@@ -49,8 +50,9 @@ La matriz de puntos del skeleton procede de la misma idea que [DIVAE](https://gi
 - **Inspector previo:** título limpio, autor, duración, miniatura local y tabla con **solo las pistas que existen** (vídeo+audio, solo vídeo, solo audio), con resolución real, FPS, códec y tamaño estimado cuando está disponible.
 - **Regla de oro de calidad:** si el original se subió a 1080p, jamás se mostrará 1440p ni 2160p. Las etiquetas usan la altura real de píxeles (`1080p`, `720p`, …) o el bitrate real para audio (`320kbps`).
 - **Plataformas con estado visible:** YouTube, YouTube Music, Instagram y TikTok para contenido público; Spotify con descarga **no soportada** por DRM (se explica, no se promete). Consulta la [matriz completa](docs/FORMATOS.md).
-- **Cola con estados reales:** analizando, resolviendo formatos, descargando, procesando/muxing, completado o error concreto. Cancelar, reintentar, copiar ruta y limpiar historial.
-- **Seguridad desde el primer commit:** URLs permitidas por dominio, sin credenciales en la URL, sin `path traversal`, nombres de archivo seguros, argumentos de procesos como array (nunca shell), errores redactados, sin secretos ni telemetría.
+- **Cola con estados reales:** descargando, procesando/muxing, completado, error concreto o cancelado. Progreso leído de la salida real de `yt-dlp`; cancelar, reintentar, copiar ruta verificada y limpiar historial.
+- **Ejecución sin shell:** `yt-dlp` y `ffmpeg` se invocan con `argv` separado; los IDs de formato se comprueban contra la última inspección y los archivos se confinan a `~/Seyro-MP4`. `ffmpeg` solo se exige para mux o recodificación.
+- **Seguridad desde el primer commit:** URLs HTTPS públicas con dominios permitidos o archivos directos, sin credenciales, IPs ni `localhost`, sin `path traversal`, nombres de archivo seguros, errores redactados, sin secretos ni telemetría.
 - **Sin bloat:** Rust + JavaScript sin frameworks en runtime, sin CDN, sin servicios de pago; el único `localStorage` guarda `{mode, accent, customAccent, font, locale}`.
 - **Brutalismo limpio con ADN Seyroo:** bloques rectos, bordes de 2px, rejilla marcada y contraste real; sin gradientes morado/azul ni sombras difusas. Detalle en [`docs/DESIGN.md`](docs/DESIGN.md).
 - **Apariencia propia:** papel, terminal o sistema; acentos curados (naranja Seyroo, lima, coral, cian, ámbar) o uno personalizado validado por WCAG; tipografía grotesca, monotécnica o editorial con fallbacks del sistema y sin red.
@@ -61,13 +63,14 @@ La matriz de puntos del skeleton procede de la misma idea que [DIVAE](https://gi
 Resumen (detalles en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)):
 
 ```
-core/           Biblioteca Rust pura: seguridad, modelo de pistas, adaptadores, errores
-src-tauri/      Capa de escritorio Tauri v2 (se añade con el motor)
-src/frontend/   JS + CSS locales: tokens, temas, i18n, componentes y favicon propio
+core/           Biblioteca Rust pura: seguridad, modelo de pistas, adaptadores, errores e IDs
+engine/         yt-dlp/ffmpeg con argv, inspección real, cola, progreso y cancelación
+src-tauri/      Capa Tauri v2: comandos IPC mínimos, CSP e iconos derivados del SVG
+src/frontend/   JS + CSS locales: temas, i18n, componentes, selector y cola
 docs/           Landing estática, arquitectura, diseño, formatos y páginas legales
 docs/assets/    Copia sincronizada de assets compartidos (sync-web-assets.sh)
-scripts/        Chequeo de secretos, frontend, i18n y sincronización de assets
-.github/        CI: núcleo, frontend, secretos y documentación obligatoria
+scripts/        Chequeo de secretos, frontend, i18n, iconos y sincronización de assets
+.github/        CI: núcleo, motor, escritorio, frontend, secretos y documentación
 ```
 
 Decisiones principales: la inspección y la descarga ocurren **en el equipo del usuario**; `yt-dlp` y `ffmpeg` son dependencias opcionales que el usuario instala y que se invocan con argumentos seguros, no binarios empaquetados ni servicios remotos. La web de GitHub Pages es **solo documentación**: no promete descargar nada desde el navegador.
@@ -78,20 +81,36 @@ Decisiones principales: la inspección y la descarga ocurren **en el equipo del 
 git clone https://github.com/vDaiki-dev/Seyro-MP4.git
 cd Seyro-MP4
 
-# Verificación del núcleo (no necesita yt-dlp ni ffmpeg)
+# Verificación completa (no necesita yt-dlp ni ffmpeg)
 cargo fmt --all -- --check
-cargo clippy -p seyro-mp4-core --all-targets -- -D warnings
-cargo test  -p seyro-mp4-core
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test  --workspace
+cargo check -p seyro-mp4-app
 
 # Verificación del frontend (Node incluido en el runner de CI)
 bash scripts/check-frontend.sh
+bash scripts/check-secrets.sh
 # Tras editar un asset compartido, sincronizar la copia de docs/assets:
 bash scripts/sync-web-assets.sh
 ```
 
-Para ver la interfaz mientras se conecta el motor, abre `src/frontend/index.html` con un servidor local estático (por ejemplo `python3 -m http.server` desde esa carpeta). No simula descargas: el botón "Analizar enlace" valida la URL y avisa de que el motor llega en el siguiente paso.
+Para ejecutar la aplicación de escritorio se necesita Tauri CLI (`cargo install tauri-cli --version '^2'`) y las dependencias nativas de WebKit/GTK. Entonces `cargo tauri dev` abre la app y `cargo tauri build` genera el paquete. `yt-dlp` y `ffmpeg` se detectan en el `PATH`: si faltan, la app lo indica en lugar de mostrar un error genérico. Nada se instala automáticamente.
 
-Cuando la interfaz esté terminada, la aplicación de escritorio se ejecutará con `cargo tauri dev` y la compilación de producción con `cargo tauri build`. `yt-dlp` y `ffmpeg` se detectarán en el `PATH`; si faltan, la app indicará qué instalar en lugar de mostrar un error genérico.
+Inspección real desde la línea de comandos, sin interfaz:
+
+```bash
+cargo run -p seyro-mp4-engine --example inspect_url -- 'https://www.youtube.com/watch?v=jNQXAC9IVRw'
+```
+
+Solo imprime lo que devuelve el origen: plataforma, título, altura real, pistas visibles y descartadas.
+
+Descarga real de extremo a extremo (por defecto un archivo público pequeño; borra el resultado al terminar):
+
+```bash
+cargo run -p seyro-mp4-engine --example download_url
+```
+
+Imprime la pista elegida, el estado final de la cola, la ruta verificada y los bytes comprobados en disco. No hay descargas simuladas ni progresos inventados.
 
 ## Plataformas y calidades
 

@@ -27,6 +27,58 @@ jobs:
       - name: Pruebas deterministas
         run: cargo test -p seyro-mp4-core
 
+  engine:
+    name: Motor · clippy y pruebas deterministas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: '1.100.0'
+          components: clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      - name: Clippy
+        run: cargo clippy -p seyro-mp4-engine --all-targets -- -D warnings
+      - name: Pruebas del motor
+        run: cargo test -p seyro-mp4-engine
+
+  desktop:
+    name: Tauri · compilación e iconos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Dependencias del sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev librsvg2-bin imagemagick
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: '1.100.0'
+          components: clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      - name: Iconos derivados del SVG maestro
+        run: |
+          bash scripts/build-icons.sh
+          python3 - <<'PY'
+          import pathlib
+          out = pathlib.Path('src-tauri/icons')
+          expected = {
+              '32x32.png': b'\x89PNG\r\n\x1a\n',
+              '128x128.png': b'\x89PNG\r\n\x1a\n',
+              '128x128@2x.png': b'\x89PNG\r\n\x1a\n',
+              'icon.png': b'\x89PNG\r\n\x1a\n',
+              'icon.icns': b'icns',
+              'icon.ico': b'\x00\x00\x01\x00',
+          }
+          for name, magic in expected.items():
+              data = (out / name).read_bytes()
+              assert data.startswith(magic), name
+          print('OK: 6 iconos con cabeceras válidas')
+          PY
+      - name: Comprobar la capa Tauri
+        run: cargo check -p seyro-mp4-app
+
   frontend:
     name: Frontend · pruebas, i18n y assets
     runs-on: ubuntu-latest
