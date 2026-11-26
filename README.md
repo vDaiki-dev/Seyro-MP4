@@ -17,12 +17,13 @@ Seyro-MP4 es la segunda herramienta de la familia **Seyroo**, continuación de [
 | Núcleo de seguridad (URLs, rutas, nombres de archivo, errores) | ✅ Implementado y con pruebas |
 | Registro de plataformas y matriz de capacidades reales | ✅ Implementado y con pruebas |
 | Modelo de pistas reales y política de calidades honestas | ✅ Implementado y con pruebas |
-| Motor de inspección/descarga (`yt-dlp` + `ffmpeg` locales) | ✅ Implementado con 14 pruebas deterministas |
+| Motor de inspección/descarga (`yt-dlp` + `ffmpeg` locales) | ✅ Implementado con 16 pruebas deterministas y descarga real verificada |
 | Capa Tauri v2, IPC mínimo y cola con cancelación/reintento | ✅ Implementada y comprobada con `cargo check` |
 | Interfaz local y componentes (`Toast`, `Modal`, `Tooltip`, `Badge`, `Skeleton`, `FormatSelector`, `QueueItem`) | ✅ Implementados y conectados al motor |
 | Brutalismo limpio, 3 modos, 5 acentos + personalizado, 3 tipografías | ✅ Implementado con contraste WCAG validado |
 | Español e inglés con diccionarios centralizados y respaldo | ✅ Implementado y verificado en CI |
 | Web estática y páginas legales | ✅ Landing publicada; solo documentación, sin descargador simulado |
+| Auditoría local reproducible (`scripts/audit.sh`) | ✅ Secretos, XSS/SSRF, shell, accesibilidad, iconos y compilación |
 
 No hay capturas ni cifras inventadas: este README se actualiza cuando cada pieza funciona de verdad.
 
@@ -90,6 +91,8 @@ cargo check -p seyro-mp4-app
 # Verificación del frontend (Node incluido en el runner de CI)
 bash scripts/check-frontend.sh
 bash scripts/check-secrets.sh
+# Auditoría local completa (secretos, XSS/SSRF, legal, i18n, iconos y Rust):
+bash scripts/audit.sh
 # Tras editar un asset compartido, sincronizar la copia de docs/assets:
 bash scripts/sync-web-assets.sh
 ```

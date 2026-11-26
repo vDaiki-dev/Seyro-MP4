@@ -17,6 +17,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test  --workspace
 bash scripts/check-frontend.sh
 bash scripts/check-secrets.sh
+bash scripts/audit.sh
 git commit -m "feat(amplio): descripción concreta"
 git push -u origin feat/nombre-corto
 ```

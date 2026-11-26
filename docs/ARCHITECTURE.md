@@ -64,7 +64,7 @@ src/frontend/             JavaScript + CSS locales, sin bundler ni dependencias
 
 docs/                     Landing estática, arquitectura, diseño y documentos legales
 docs/assets/              Copia sincronizada de boot/i18n/security/theme/styles/favicon
-scripts/                  check-secrets, check-frontend, check-i18n, build-icons, sync-web-assets
+scripts/                  check-secrets, check-frontend, check-i18n, build-icons, sync-web-assets, audit
 .github/workflows/ci.yml  Núcleo, motor, escritorio, frontend, secretos y documentación
 ```
 
@@ -145,4 +145,5 @@ cargo test  --workspace
 cargo check -p seyro-mp4-app
 bash scripts/check-frontend.sh
 bash scripts/check-secrets.sh
+bash scripts/audit.sh
 ```

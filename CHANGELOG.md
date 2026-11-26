@@ -14,6 +14,10 @@ Todos los cambios relevantes se documentan aquí. Formato: [Keep a Changelog](ht
 
 ### Corregido
 - Las fuentes directas que declaran `vcodec: null` ya no se descartan: el tipo se infiere de `video_ext`/`audio_ext` sin inventar códecs.
+- El texto estático de la landing ya no anuncia que el motor llega «en el siguiente paso».
+
+### Auditado
+- `scripts/audit.sh` reproduce localmente secretos, XSS/SSRF, shell en Rust, accesibilidad básica, iconos, i18n y compilación completa.
 
 ### Cambiado
 - `Core` expone `RealTrack.quality_label` calculado en Rust; la UI ya no calcula calidades.
