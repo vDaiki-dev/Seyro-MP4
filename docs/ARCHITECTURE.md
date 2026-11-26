@@ -38,18 +38,38 @@ src-tauri/ (fase UI)      Capa de escritorio
   downloader.rs            Cola, estados, progreso, cancelación y mux
   tools.rs                Descubrimiento de yt-dlp/ffmpeg en PATH, sin shell
 
-src/frontend/ (fase UI)   JavaScript + CSS locales
+src/frontend/             JavaScript + CSS locales, sin bundler ni dependencias
+  boot.js                 Preferencias aplicadas en <head>: sin parpadeo
+  security.js             Sanitización de texto/URL y allowlist de enlaces
+  i18n.js                 Diccionarios es/en, interpolación y respaldo
+  theme.js                Modos, acentos, contraste WCAG y tipografías
   components.js           Toast, Modal, Tooltip, Badge, Skeleton (matriz DIVAE)
-  format-selector.js      Selector de pistas reales
-  queue-item.js           Estado concreto de cada tarea
-  inspector-panel.js      Metadatos y skeleton loaders
-  security.js             Sanitización de texto/URL antes de renderizar
-  styles.css              Tokens Seyroo (mismo acento naranja que Seyropea)
+  appearance.js           Panel de apariencia e idioma
+  main.js                 Cableado de la app local
+  styles.css              Tokens brutalistas Seyroo; sin gradientes ni sombras difusas
+  favicon.svg             Marca propia Seyro-MP4
+  test/                   Pruebas deterministas con node:test
+  format-selector.js      Selector de pistas reales (con el motor, Paso 5)
+  queue-item.js           Estado concreto de cada tarea (Paso 5)
+  inspector-panel.js      Metadatos y skeletons reales (Paso 5)
 
-docs/                     Landing estática, arquitectura, formatos y documentos legales
-assets/brand/             SVG maestro, favicon y script de regeneración
-.github/workflows/ci.yml  Formato, clippy, pruebas e higiene de secretos
+docs/                     Landing estática, arquitectura, diseño y documentos legales
+docs/assets/              Copia sincronizada de boot/i18n/security/theme/styles/favicon
+assets/brand/             SVG maestro y favicon (fase de branding)
+scripts/                  check-secrets, check-frontend, check-i18n, sync-web-assets
+.github/workflows/ci.yml  Núcleo, frontend, secretos y documentación obligatoria
 ```
+
+## Configuración local, idiomas y tema
+
+La app y la web comparten un único registro en `localStorage`, `seyro-mp4.settings`, con `{mode, accent, customAccent, font, locale}`. `boot.js` se ejecuta de forma bloqueante en `<head>` y aplica los valores antes de pintar el body: no hay parpadeo. `theme.js` vuelve a validar todo contra listas blancas; un valor manipulado cae a los defaults.
+
+- **Modos:** `paper`, `terminal` y `system`. CSS reacciona a `prefers-color-scheme` cuando el modo es `system`.
+- **Acentos:** cinco presets y uno personalizado. `validateAccent` exige ≥4.5:1 para el texto sobre el acento y ≥3:1 contra al menos un fondo; `contrastingInk` elige entre `#111111` y `#ffffff`. El borde de los botones primarios permanece visible con acentos claros.
+- **Tipografías:** grotesca del sistema, mono técnica y editorial; el mono se reserva para datos y estados, con independencia de la fuente elegida.
+- **i18n:** los textos viven en `i18n.js`; `translateDom` aplica `data-i18n`, `data-i18n-title`, `data-i18n-aria` y `data-i18n-placeholder`. Toda clave ausente respalda al español. La CI verifica que es/en tengan exactamente las mismas claves y que cada clave usada en HTML exista en ambos.
+
+No hay telemetría, ni peticiones de fuentes o CDN, ni credenciales en almacenamiento local. Los cuerpos legales siguen siendo Markdown en `docs/` y se enlazan desde ambas interfaces.
 
 ## Flujo de datos
 

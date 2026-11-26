@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es" data-mode="system" data-font="grotesk" data-accent="seyroo">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seyro-MP4 — Inspector de medios</title>
+  <meta name="description" content="Descarga honesta y multiformato: inspecciona pistas reales, sin calidades inventadas. Familia Seyroo.">
+  <meta name="theme-color" content="#f2f0ea">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./boot.js"></script>
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <rect x="1" y="1" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M10 8h12v4h-8v3h7v4h-7v5h-4z" fill="currentColor"/>
+          <rect x="22" y="22" width="6" height="6" fill="#7bc86c"/>
+        </svg>
+        <strong data-i18n="app.title">Seyro-MP4</strong>
+        <span class="badge badge--accent" data-i18n="app.badge">BRUTALISTA · LOCAL · SIN IA</span>
+      </div>
+      <div class="topbar__actions">
+        <button id="lang-btn" class="button button--small" type="button" data-i18n-title="label.language" data-i18n-aria="label.language" title="Idioma">ES / EN</button>
+        <button id="help-btn" class="button button--small" type="button" data-i18n-title="modal.shortcuts.title" data-i18n-aria="modal.shortcuts.title" title="Atajos de teclado">?</button>
+        <button id="appearance-btn" class="button button--small" type="button"
+                data-i18n-title="action.settings" data-i18n-aria="action.settings" title="Apariencia e idioma">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h16"/><rect x="8" y="4" width="8" height="4" fill="var(--accent)"/>
+            <rect x="12" y="10" width="8" height="4" fill="var(--accent)"/><rect x="6" y="16" width="8" height="4" fill="var(--accent)"/>
+          </svg>
+          <span data-i18n="nav.appearance">Apariencia</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="block block--entry" aria-labelledby="entry-title">
+        <div class="block__head"><h1 id="entry-title" data-i18n="app.title">Seyro-MP4</h1></div>
+        <p class="lead" data-i18n="app.subtitle">Inspecciona primero. Descarga después. Nunca inventes una resolución.</p>
+        <form id="analyze-form">
+          <label for="url-input" data-i18n="label.link">Enlace público</label>
+          <div class="input-row">
+            <input id="url-input" name="url" type="url" inputmode="url" spellcheck="false"
+                   data-i18n-placeholder="label.linkPlaceholder" placeholder="https://...">
+            <button class="button button--primary" type="submit" data-i18n="action.analyze">Analizar enlace</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="block" aria-labelledby="meta-title">
+        <div class="block__head">
+          <h2 id="meta-title" data-i18n="nav.inspector">Inspector</h2>
+          <button id="demo-skeleton" class="button button--small" type="button" data-i18n="action.demoSkeleton">Ver skeleton</button>
+        </div>
+        <p id="metadata-empty" class="empty" data-i18n="empty.inspector">Pega un enlace público y pulsa Analizar.</p>
+        <div id="metadata-slot" hidden></div>
+        <dl id="metadata-fields" class="data-list" hidden></dl>
+      </section>
+
+      <section class="block" aria-labelledby="tracks-title">
+        <div class="block__head"><h2 id="tracks-title" data-i18n="label.tracks">Pistas reales</h2></div>
+        <p id="tracks-empty" class="empty" data-i18n="empty.tracks">Todavía no hay pistas.</p>
+        <div id="tracks-list"></div>
+      </section>
+
+      <section class="block block--queue" aria-labelledby="queue-title">
+        <div class="block__head"><h2 id="queue-title" data-i18n="nav.queue">Cola</h2></div>
+        <p id="queue-empty" class="empty" data-i18n="empty.queue">La cola está vacía.</p>
+        <ul id="queue-list" class="queue-list"></ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p data-i18n="footer.disclaimer">Herramienta técnica. No fomenta piratería ni elude DRM.</p>
+      <nav aria-label="Legal">
+        <a href="https://github.com/vDaiki-dev/Seyro-MP4/blob/main/docs/PRIVACIDAD.md" data-i18n="legal.privacy">Privacidad</a>
+        <a href="https://github.com/vDaiki-dev/Seyro-MP4/blob/main/docs/TERMINOS.md" data-i18n="legal.terms">Términos</a>
+        <a href="https://github.com/vDaiki-dev/Seyro-MP4/blob/main/docs/COOKIES.md" data-i18n="legal.cookies">Cookies</a>
+        <a href="https://github.com/vDaiki-dev/Seyro-MP4/blob/main/docs/DESCARGO.md" data-i18n="legal.disclaimer">Descargo</a>
+      </nav>
+    </footer>
+  </div>
+
+  <div id="toast-root" aria-live="polite" aria-atomic="false"></div>
+  <div id="modal-root"></div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

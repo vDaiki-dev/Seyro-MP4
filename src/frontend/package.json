@@ -1,0 +1,6 @@
+{
+  "name": "seyro-mp4-frontend",
+  "private": true,
+  "type": "module",
+  "description": "Frontend local de Seyro-MP4, sin dependencias en runtime"
+}

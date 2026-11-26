@@ -27,6 +27,16 @@ jobs:
       - name: Pruebas deterministas
         run: cargo test -p seyro-mp4-core
 
+  frontend:
+    name: Frontend · pruebas, i18n y assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Comprobar entorno Node del runner
+        run: node --version
+      - name: Higiene, pruebas y paridad de idiomas
+        run: bash scripts/check-frontend.sh
+
   hygiene:
     name: Higiene · secretos y documentación legal
     runs-on: ubuntu-latest
@@ -37,8 +47,9 @@ jobs:
       - name: Verificar documentos obligatorios
         run: |
           for file in README.md LICENSE SECURITY.md CONTRIBUTING.md \
-            docs/ARCHITECTURE.md docs/FORMATOS.md docs/PRIVACIDAD.md \
-            docs/TERMINOS.md docs/COOKIES.md docs/DESCARGO.md docs/.nojekyll; do
+            docs/ARCHITECTURE.md docs/DESIGN.md docs/FORMATOS.md \
+            docs/PRIVACIDAD.md docs/TERMINOS.md docs/COOKIES.md \
+            docs/DESCARGO.md docs/index.html docs/.nojekyll; do
             test -f "$file" || { echo "Falta $file" >&2; exit 1; }
           done
           echo 'OK: documentación legal presente'

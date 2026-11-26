@@ -17,9 +17,11 @@ Seyro-MP4 es la segunda herramienta de la familia **Seyroo**, continuación de [
 | Núcleo de seguridad (URLs, rutas, nombres de archivo, errores) | ✅ Implementado y con pruebas |
 | Registro de plataformas y matriz de capacidades reales | ✅ Implementado y con pruebas |
 | Modelo de pistas reales y política de calidades honestas | ✅ Implementado y con pruebas |
-| Motor de inspección/descarga (`yt-dlp` + `ffmpeg` locales) | 🚧 En construcción |
-| Interfaz de escritorio y componentes | 🚧 En construcción |
-| Web estática y páginas legales | ✅ Documentación publicada; landing en construcción |
+| Motor de inspección/descarga (`yt-dlp` + `ffmpeg` locales) | 🚧 En construcción (siguiente paso) |
+| Interfaz local y componentes (`Toast`, `Modal`, `Tooltip`, `Badge`, `Skeleton`) | ✅ Implementados y con pruebas de lógica |
+| Brutalismo limpio, 3 modos, 5 acentos + personalizado, 3 tipografías | ✅ Implementado con contraste WCAG validado |
+| Español e inglés con diccionarios centralizados y respaldo | ✅ Implementado y verificado en CI |
+| Web estática y páginas legales | ✅ Landing publicada; solo documentación, sin descargador simulado |
 
 No hay capturas ni cifras inventadas: este README se actualiza cuando cada pieza funciona de verdad.
 
@@ -49,7 +51,10 @@ La matriz de puntos del skeleton procede de la misma idea que [DIVAE](https://gi
 - **Plataformas con estado visible:** YouTube, YouTube Music, Instagram y TikTok para contenido público; Spotify con descarga **no soportada** por DRM (se explica, no se promete). Consulta la [matriz completa](docs/FORMATOS.md).
 - **Cola con estados reales:** analizando, resolviendo formatos, descargando, procesando/muxing, completado o error concreto. Cancelar, reintentar, copiar ruta y limpiar historial.
 - **Seguridad desde el primer commit:** URLs permitidas por dominio, sin credenciales en la URL, sin `path traversal`, nombres de archivo seguros, argumentos de procesos como array (nunca shell), errores redactados, sin secretos ni telemetría.
-- **Sin bloat:** Rust + JavaScript sin frameworks en runtime, sin CDN, sin servicios de pago, sin `localStorage` innecesario.
+- **Sin bloat:** Rust + JavaScript sin frameworks en runtime, sin CDN, sin servicios de pago; el único `localStorage` guarda `{mode, accent, customAccent, font, locale}`.
+- **Brutalismo limpio con ADN Seyroo:** bloques rectos, bordes de 2px, rejilla marcada y contraste real; sin gradientes morado/azul ni sombras difusas. Detalle en [`docs/DESIGN.md`](docs/DESIGN.md).
+- **Apariencia propia:** papel, terminal o sistema; acentos curados (naranja Seyroo, lima, coral, cian, ámbar) o uno personalizado validado por WCAG; tipografía grotesca, monotécnica o editorial con fallbacks del sistema y sin red.
+- **Español e inglés desde el primer día:** textos, estados, tooltips y errores centralizados, con respaldo automático al español y paridad comprobada en CI.
 
 ## Arquitectura
 
@@ -57,11 +62,12 @@ Resumen (detalles en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)):
 
 ```
 core/           Biblioteca Rust pura: seguridad, modelo de pistas, adaptadores, errores
-src-tauri/      Capa de escritorio Tauri v2 (se añade con la UI)
-src/frontend/   JavaScript + CSS locales, tokens Seyroo y componentes semánticos
-docs/           Landing estática, arquitectura, formatos y páginas legales
-assets/brand/   SVG maestro, favicon y script de regeneración
-.github/        CI: formato, clippy, pruebas e higiene de secretos
+src-tauri/      Capa de escritorio Tauri v2 (se añade con el motor)
+src/frontend/   JS + CSS locales: tokens, temas, i18n, componentes y favicon propio
+docs/           Landing estática, arquitectura, diseño, formatos y páginas legales
+docs/assets/    Copia sincronizada de assets compartidos (sync-web-assets.sh)
+scripts/        Chequeo de secretos, frontend, i18n y sincronización de assets
+.github/        CI: núcleo, frontend, secretos y documentación obligatoria
 ```
 
 Decisiones principales: la inspección y la descarga ocurren **en el equipo del usuario**; `yt-dlp` y `ffmpeg` son dependencias opcionales que el usuario instala y que se invocan con argumentos seguros, no binarios empaquetados ni servicios remotos. La web de GitHub Pages es **solo documentación**: no promete descargar nada desde el navegador.
@@ -76,7 +82,14 @@ cd Seyro-MP4
 cargo fmt --all -- --check
 cargo clippy -p seyro-mp4-core --all-targets -- -D warnings
 cargo test  -p seyro-mp4-core
+
+# Verificación del frontend (Node incluido en el runner de CI)
+bash scripts/check-frontend.sh
+# Tras editar un asset compartido, sincronizar la copia de docs/assets:
+bash scripts/sync-web-assets.sh
 ```
+
+Para ver la interfaz mientras se conecta el motor, abre `src/frontend/index.html` con un servidor local estático (por ejemplo `python3 -m http.server` desde esa carpeta). No simula descargas: el botón "Analizar enlace" valida la URL y avisa de que el motor llega en el siguiente paso.
 
 Cuando la interfaz esté terminada, la aplicación de escritorio se ejecutará con `cargo tauri dev` y la compilación de producción con `cargo tauri build`. `yt-dlp` y `ffmpeg` se detectarán en el `PATH`; si faltan, la app indicará qué instalar en lugar de mostrar un error genérico.
 
