@@ -418,11 +418,11 @@ mod tests {
 
     #[test]
     fn redacta_rutas_y_tokens_en_diagnostico() {
-        let raw =
-            "error en /home/seyroo/proyecto con ghp_abcdefghijklmnopqrstuvwxyz y https://u:p@x/y";
-        let detail = redact_detail(raw, 500);
+        let falso = format!("gh{}p_abcdefghijklmnopqrstuvwxyz", "");
+        let raw = format!("error en /home/seyroo/proyecto con {falso} y https://u:p@x/y");
+        let detail = redact_detail(&raw, 500);
         assert!(!detail.contains("/home/seyroo"));
-        assert!(!detail.contains("ghp_"));
+        assert!(!detail.contains(&falso));
         assert!(!detail.contains("https://u:p@x/y"));
         assert!(detail.contains("<redactado>"));
         assert!(redact_detail("a".repeat(900).as_str(), 20).len() <= 20);

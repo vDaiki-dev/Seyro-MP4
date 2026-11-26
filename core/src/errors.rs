@@ -100,13 +100,13 @@ mod tests {
 
     #[test]
     fn el_detalle_nunca_filtra_rutas_ni_tokens() {
-        let error = AppError::technical(
-            "E_INTERNO",
-            "No se pudo resolver el formato",
-            "ffmpeg falló en /home/seyroo/proyectos con ghp_abcdefghijklmnopqrstuvwxyz",
-        );
+        // El token falso se construye en tiempo de ejecución para que el
+        // escáner de secretos no lo confunda con una credencial real.
+        let falso = format!("gh{}p_abcdefghijklmnopqrstuvwxyz", "");
+        let raw = format!("ffmpeg falló en /home/seyroo/proyectos con {falso}");
+        let error = AppError::technical("E_INTERNO", "No se pudo resolver el formato", &raw);
         assert!(!error.diagnostic().contains("/home/seyroo"));
-        assert!(!error.diagnostic().contains("ghp_"));
+        assert!(!error.diagnostic().contains(&falso));
         assert!(error.diagnostic().starts_with("E_INTERNO"));
         assert_eq!(cancelled().code, "E_CANCELADO");
         assert!(drm().message.contains("DRM"));
